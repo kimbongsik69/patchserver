@@ -1,0 +1,37 @@
+# C++ Builder generated
+*.obj
+*.tds
+*.ncb
+*.opt
+*.plz
+*.tds
+*.identcache
+*.dll
+*.exe
+*.map
+*.pch
+
+# User-specific settings
+*.cbproj.local
+*.stat
+
+# Debug build artifacts
+Debug/*.obj
+Debug/*.tds
+Debug/*.map
+Debug/*.pch
+Debug/*.#00
+Debug/*.exe
+Debug/*.log
+Debug/*.ncb
+Debug/*.opt
+
+# __history (C++ Builder history)
+__history/
+
+# __recovery (C++ Builder crash recovery)
+__recovery/
+
+# IDE
+.svn/
+.git/
