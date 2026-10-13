@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899-12-30 00:00:00.000.cpp,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.cpp=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.cpp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.cpp,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.cpp=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.cpp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.cpp,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.cpp=</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.cpp,C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.cpp=C:\Users\Administrator\Documents\RAD Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.cbproj,C:\Users\Administrator\Documents\RAD Studio\Projects\ServerProj.cbproj=C:\Users\Administrator\Documents\RAD Studio\Projects\Project1.cbproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.dfm,C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.dfm=C:\Users\Administrator\Documents\RAD Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.h,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\UnitServer.h=C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.h</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.h,C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.h=C:\Users\Administrator\Documents\RAD Studio\Projects\Unit1.h</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.cbproj,C:\Project2007\SOCKET_TCP_SAMPLE\SERVER\PatchServer.cbproj=C:\Project2007\SOCKET_TCP_SAMPLE\SERVER\ServerProj.cbproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.cbproj,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\ServerProj.cbproj=C:\Users\Administrator\Documents\RAD Studio\Projects\ServerProj.cbproj</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.cpp,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\UnitServer.cpp=C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.cpp</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.dfm,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\UnitServer.dfm=C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.dfm</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.h,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.h=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.h</Transaction>
+    <Transaction>1899-12-30 00:00:00.000.h,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.h=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.h</Transaction>
+  </Transactions>
+</BorlandProject>

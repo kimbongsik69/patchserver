@@ -1,0 +1,392 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+
+#include <math.h>
+#include <stdio.h>
+#include <tchar.h>
+#include <IniFiles.hpp>
+#include <time.h>
+#include <utime.h>
+
+#pragma hdrstop
+
+
+#include "SecurityThread.h"
+
+#pragma package(smart_init)
+
+#define Log(p)        LogFunc(p, "secsvr_thread.log", __FUNC__, __LINE__)
+#define LogSec(p)     LogFunc(p, "secsvr_sec.log", __FUNC__, __LINE__)
+#define LogErr(p)     LogFunc(p, "secsvr_etc.log", __FUNC__, __LINE__)
+
+
+__fastcall TSecurityThread::TSecurityThread(bool CreateSuspended, TServerClientWinSocket * ASocket)
+	: TServerClientThread(CreateSuspended, ASocket)
+{
+	FreeOnTerminate=true;
+    m_EXEPath = ExtractFilePath(ParamStr(0));
+    memset(&m_CurrenctHeader, 0x00, sizeof(PATCH_TRANSFER_HEADER));
+}
+//---------------------------------------------------------------------------
+__fastcall TSecurityThread::~TSecurityThread()
+{
+	//
+}
+//---------------------------------------------------------------------------
+void __fastcall TSecurityThread::ClientExecute()
+{
+	int HIndex;
+	mUserID = "";
+	m_bufPos = 0;
+	TDateTime lastTime = Now();
+
+	TWinSocketStream *pStream;	// 소켓을 스트림으로 받음
+	pStream = new TWinSocketStream(ClientSocket, 60000);
+
+	while (!Terminated && ClientSocket->Connected)
+	{
+		if(pStream->WaitForData(50))	//최대 대기시간
+		{
+			int read_len = 0;
+            byte buf[4096] = {0,};
+
+			try
+            {
+				read_len = pStream->Read(buf, 4096);
+                AnsiString Str = AnsiString().sprintf("사이즈체크:%d", read_len );
+				Log(Str);
+			}
+            catch (Exception &e)
+            {
+            	Terminate();
+				Log(e.Message);
+				break ;
+			}
+
+            // 입력된 값이 없으면 종료
+			if( read_len == 0)
+            {
+            	Terminate();
+				break;
+			}
+			else
+            {
+				lastTime = Now();
+				RunPacket(pStream, buf, read_len);
+			}
+		}
+
+		int tm = Now().FormatString("hhnnss").ToInt();
+		int checkTime = IncSecond(lastTime, 1000).FormatString("hhnnss").ToInt();
+
+		if (tm > checkTime)
+        {
+			LogErr(AnsiString().sprintf("체크 시간 초과 - 접속 해제 [%s] [%s]", mUserID.c_str(), ClientSocket->RemoteAddress.c_str()));
+          	Terminate();
+		}
+	}
+
+	delete pStream;
+
+	try
+    {
+		ClientSocket->Close();
+      	Terminate();        
+	}
+    catch (Exception &e)
+    {
+		Log(e.Message);
+	}
+}
+//---------------------------------------------------------------------------
+void __fastcall TSecurityThread::RunPacket(TWinSocketStream *pStream, byte *buf, int len)
+{
+    m_RecvBuf.insert(m_RecvBuf.end(), buf, buf + len);
+    ParseRecvBuf();
+}
+//---------------------------------------------------------------------------
+void __fastcall TSecurityThread::LogFunc(AnsiString msg, AnsiString filename, char *func, int line)
+{
+	AnsiString fn = ExtractFilePath(ParamStr(0))+ filename;
+	FILE *fp = fopen(fn.c_str(), "at");
+	if (fp) {
+		fprintf(fp, "-------------------------------------------------------------------\n");
+		fprintf(fp, "%s %-30s %5d %0x %s %s %d\n", AnsiString(Now().DateTimeString()).c_str(), func, line, this, mUserID.c_str(), ClientSocket->RemoteAddress, ClientSocket->SocketHandle);
+		fprintf(fp, "%s\n", msg.c_str());
+		fclose(fp);
+	}
+}
+//---------------------------------------------------------------------------
+void __fastcall TSecurityThread::Send_BT(PATCH_TRANSFER_HEADER *out_hdr, void *out, int out_size, void *out_repeat, int out_repeat_size, BT_FOOTER *out_ftr)
+{
+
+	int total_size = sizeof(PATCH_TRANSFER_HEADER)+out_size+out_repeat_size+sizeof(BT_FOOTER);
+	char *send_buf = new char[total_size];
+
+	int pos = 0;
+
+	memcpy(send_buf+pos, out_hdr, sizeof(BT_HEADER));
+	pos += sizeof(BT_HEADER);
+
+	memcpy(send_buf+pos, out, out_size);
+	pos += out_size;
+
+	if (out_repeat_size > 0) {
+		memcpy(send_buf+pos, out_repeat, out_repeat_size);
+		pos += out_repeat_size;
+	}
+
+	memcpy(send_buf+pos, out_ftr, sizeof(BT_FOOTER));
+	pos += sizeof(BT_FOOTER);
+
+	try
+    {
+		SendBuf(send_buf, total_size);
+
+	}
+    catch (Exception &e)
+    {
+		LogErr(e.Message);
+	}
+	delete []send_buf;
+}
+//---------------------------------------------------------------------------
+int __fastcall TSecurityThread::SendBuf(void *buf, int len)
+{
+	if (len <=0)
+		return 0;
+
+	int send_byte = 0;
+	int st_time = GetTickCount();
+
+	try
+    {
+		do
+        {
+			int n = 0;
+
+			try
+            {
+				n = ClientSocket->SendBuf((char *)buf+send_byte, len-send_byte);
+				if (n > 0)
+                {
+					send_byte += n;
+					if (send_byte >= len)
+						break;
+				}
+				if (n < 0)	break;
+				Sleep(100);
+			}
+			catch (Exception &e)
+            {
+				LogErr(String(e.ClassName()) + " : " + e.Message);
+				break;
+			}
+		} while (GetTickCount() - st_time < 5000);
+
+	}
+    catch (Exception &e)
+    {
+		LogErr(e.Message);
+	}
+	return send_byte;
+}
+//---------------------------------------------------------------------------
+void __fastcall TSecurityThread::ParseRecvBuf()
+{
+	while(!m_RecvBuf.empty() && ParseRecvBufLoop())
+    {
+    	Sleep(10);
+    };
+}
+//---------------------------------------------------------------------------
+bool __fastcall TSecurityThread::ParseRecvBufLoop()
+{
+	for(int i = m_bufPos; i < (int)m_RecvBuf.size() - 2; i++)
+    {
+    	if (m_RecvBuf[i] == FF && m_RecvBuf[i + 1] == CR && m_RecvBuf[i + 2] == LF)
+        {
+	        vbyte::iterator it;
+  	        short header_type;
+
+            if (m_process_status == 0)
+            {
+	            it = m_RecvBuf.begin();
+        	    memcpy(&header_type, &(*it), sizeof(short));
+            }
+            else
+            {
+				it = m_RecvBuf.end() - sizeof(PATCH_TRANSFER_FOOTER);
+        	    memcpy(&header_type, &(*it), sizeof(short));
+            }
+
+            if (header_type == ID_PATCH_TRANSFER_HEADER)
+            {
+                memcpy(&m_CurrenctHeader, &(*it), sizeof(PATCH_TRANSFER_HEADER));
+			    ForceDirectories(m_EXEPath + "Patch\\" + AnsiString(m_CurrenctHeader.site));
+		   	    m_bufPos++;
+
+                vbyte::iterator itE = it;
+                std::advance(itE, sizeof(PATCH_TRANSFER_HEADER));
+                m_RecvBuf.erase(it, itE);
+                m_bufPos = 0;
+
+                m_process_status = 1;
+
+                return true;
+            }
+            else if (header_type == ID_PATCH_TRANSFER_FOOTER)
+		    {
+				AnsiString FileName = AnsiString().sprintf("%sPatch\\%d\\%s", m_EXEPath.c_str(), m_CurrenctHeader.site, m_CurrenctHeader.filename);
+          	    m_bufPos = 0;
+                m_process_status = 0;
+
+                int Handle = FileCreate(FileName);
+
+				it = m_RecvBuf.begin();
+                FileWrite(Handle, &(*it), m_RecvBuf.size() - sizeof(PATCH_TRANSFER_FOOTER));
+                FileClose(Handle);
+                m_RecvBuf.clear();
+
+                struct tm tmtime;
+                tmtime.tm_year = (m_CurrenctHeader.filedate/10000) - 1900;
+                tmtime.tm_mon = (m_CurrenctHeader.filedate%10000)/100 - 1;
+                tmtime.tm_mday = m_CurrenctHeader.filedate%100;
+                tmtime.tm_hour = m_CurrenctHeader.filetime/10000;
+                tmtime.tm_min = (m_CurrenctHeader.filetime%10000)/100;
+                tmtime.tm_sec = m_CurrenctHeader.filetime%100;
+                tmtime.tm_isdst = 0;
+                time_t modtime = mktime(&tmtime);
+
+                if(modtime < 0)
+                {
+                    return -1;
+                }
+
+                struct utimbuf filetime;
+                filetime.actime = time(NULL);
+                filetime.modtime = modtime;
+                if(utime(FileName.c_str(), &filetime) < 0)
+                {
+                    return -1;
+                }
+                send_patch_ok();
+
+                return false;
+            }
+            else if (header_type == ID_PATCH_CMD)
+            {
+            	PATCH_CMD cmd;
+                memcpy(&cmd, &(*it), sizeof(PATCH_CMD));
+				Patch_Command(&cmd);
+                m_RecvBuf.clear();
+                m_bufPos = 0;
+            }
+        }
+   	    m_bufPos++;
+    }
+	return false;
+}
+//------------------------------------------------------------------------------
+void __fastcall TSecurityThread::Patch_Command(PATCH_CMD *pCmd)
+{
+	if (pCmd->cmd == PC_LIST)
+    {
+    }
+	else if (pCmd->cmd == PC_BTDIR)
+    {
+    }
+	else if (pCmd->cmd == PC_RMDIR)
+    {
+    }
+	else if (pCmd->cmd == PC_RMFILE)
+    {
+    }
+	else if (pCmd->cmd == PC_READ)
+    {
+		AnsiString ClientPath = AnsiString().sprintf("%sPatch\\%d\\%s", m_EXEPath.c_str(), pCmd->site, pCmd->filename);
+
+        FILE* fp = fopen( ClientPath.c_str(), "rb" );
+        //error처리
+        if( !fp )
+        {
+        	Log(AnsiString().sprintf("%s  읽기 실패", ClientPath));
+        	return;
+        }
+        if( fseek( fp, 0L, SEEK_END ) )
+        {
+        	Log("파일 SEEK 실패");        
+        	return;
+        }
+        long int length = ftell( fp );
+        if( length == -1 )
+        {
+        	Log("파일실패[1235]");
+        	return;
+        }
+		if( fseek( fp, 0L, SEEK_SET ) )
+        {
+        	Log("파일실패[4634]");
+        	return;
+        }
+
+        byte* pBuf = new byte[length];
+        memset( pBuf, 0x00, length * sizeof(byte) );
+        fread( pBuf, sizeof(byte), length, fp );
+        fclose(fp);
+
+        PATCH_TRANSFER_HEADER Header;
+        memset( &Header, 0x00, sizeof( PATCH_TRANSFER_HEADER ) );
+        Header.packet_type  = ID_PATCH_TRANSFER_HEADER;
+        Header.detail_type  = 0;
+        Header.site = m_Site;
+        Header.work_type = 1;
+        Header.broadcast    = m_bSynch;
+
+        strcpy( Header.filename, pCmd->filename );
+
+        Header.filedate = FormatDateTime( "YYYYMMDD", Now().CurrentDate() ).ToInt();
+        Header.filetime = FormatDateTime( "HHMMSS", Now().CurrentTime() ).ToInt();
+        Header.filesize = length;
+
+        Header.filler = 0;
+        Header.ff = FF;
+        Header.cr = CR;
+        Header.lf = LF;
+
+        PATCH_TRANSFER_FOOTER Footer;
+        memset( &Footer, 0x00, sizeof( PATCH_TRANSFER_FOOTER ) );
+        Footer.packet_type = ID_PATCH_TRANSFER_FOOTER;
+        Footer.detail_type = 0;
+
+        Footer.filler = 0;
+        Footer.ff = FF;
+        Footer.cr = CR;
+        Footer.lf = LF;
+
+        byte* FullBuf = new byte[sizeof(Header) + length * sizeof(byte) + sizeof(Footer)];
+
+        memcpy( FullBuf, &Header, sizeof(Header) );
+        memcpy( FullBuf + sizeof(Header), pBuf, length * sizeof(byte) );
+        memcpy( FullBuf + sizeof(Header) + length * sizeof(byte), &Footer, sizeof(Footer) );
+        SendBuf( FullBuf, sizeof(Header) + length * sizeof(byte) + sizeof(Footer) );
+
+        delete[] FullBuf;
+        delete[] pBuf;
+    }
+}
+//------------------------------------------------------------------------------
+int __fastcall TSecurityThread::send_patch_ok()
+{
+	PATCH_OK ok;
+	memset(&ok, 0x00, sizeof(PATCH_OK));
+	ok.packet_type = ID_PATCH_OK;
+	ok.detail_type = 0;
+	ok.ff = FF;
+	ok.cr = CR;
+	ok.lf = LF;
+
+	SendBuf(&ok, sizeof(PATCH_OK));
+	return 0;
+}

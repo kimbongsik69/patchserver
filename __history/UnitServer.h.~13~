@@ -1,0 +1,123 @@
+//---------------------------------------------------------------------------
+
+#ifndef UnitServerH
+#define UnitServerH
+//---------------------------------------------------------------------------
+#include <Classes.hpp>
+#include <Controls.hpp>
+#include <StdCtrls.hpp>
+#include <Forms.hpp>
+#include "IdCustomTCPServer.hpp"
+#include <IdBaseComponent.hpp>
+#include <IdComponent.hpp>
+#include <IdTCPServer.hpp>
+#include <System.Win.ScktComp.hpp>
+
+#include <ExtCtrls.hpp>
+#include <ComCtrls.hpp>
+#include <IdAntiFreeze.hpp>
+#include <IdAntiFreezeBase.hpp>
+#include <IdContext.hpp>
+#include <System.SysUtils.hpp>
+//---------------------------------------------------------------------------
+
+#define MAX_BUF_SIZE 200000
+
+typedef struct {
+	unsigned char bufData[MAX_BUF_SIZE];
+	char user_ip[16];
+	char user_id[50];
+	int pos;
+	int len;
+	int disconnect;
+	int fd;
+	TDateTime last_packet_time;
+	void *AContext;
+	AnsiString A1Strs;
+	int user_type;
+} SERVER_SOCK_INFO;
+
+struct CHART_SOCK_INFO
+{
+	TThreadList *sendQueue;    // 이 연결 전용 송신 큐 (비동기 전송이 필요할 때만)
+	SERVER_SOCK_INFO *ssi;
+
+	CHART_SOCK_INFO()
+    {
+		sendQueue = new TThreadList();
+		ssi = new  SERVER_SOCK_INFO;
+    }
+    ~CHART_SOCK_INFO()
+    {
+        TList *pList = sendQueue->LockList();
+        try
+        {
+			for (int i = 0; i < pList->Count; i++)
+                delete (TSisePacket2*)pList->Items[i];
+            pList->Clear();
+        }
+        __finally { sendQueue->UnlockList(); }
+		delete sendQueue;
+
+		if (ssi)
+		{
+			delete ssi;
+			ssi = NULL;
+		}
+    }
+};
+
+class TFormServer : public TForm
+{
+__published:	// IDE-managed Components
+	TServerSocket *ServerSocket;
+	TMemo *Memo1;
+	TButton *Button1;
+	TTimer *Timer1;
+	TLabel *Label1;
+	TTimer *Timer2;
+	TLabel *Label2;
+	TIdTCPServer *IdTCPServer;
+	TIdAntiFreeze *IdAntiFreeze1;
+	void __fastcall ServerSocketClientError(TObject *Sender,
+		  TCustomWinSocket *Socket, TErrorEvent ErrorEvent, int &ErrorCode);
+	void __fastcall ServerSocketGetThread(TObject *Sender,
+          TServerClientWinSocket *ClientSocket,
+          TServerClientThread *&SocketThread);
+	void __fastcall Button1Click(TObject *Sender);
+	void __fastcall Timer1Timer(TObject *Sender);
+	void __fastcall ServerSocketThreadEnd(TObject *Sender,
+          TServerClientThread *Thread);
+	void __fastcall Timer2Timer(TObject *Sender);
+	void __fastcall FormShow(TObject *Sender);
+	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
+	void __fastcall FormCreate(TObject *Sender);
+	void __fastcall FormDestroy(TObject *Sender);
+	void __fastcall IdTCPServerConnect(TIdContext *AContext);
+	void __fastcall IdTCPServerDisconnect(TIdContext *AContext);
+	void __fastcall IdTCPServerException(TIdContext *AContext, Exception *AException);
+	void __fastcall IdTCPServerExecute(TIdContext *AContext);
+
+private:	// User declarations
+//	TSecurityThread *SocketThread;
+
+//	TStringList *m_pLogStrList;
+
+//	void __fastcall LogFunc(AnsiString msg, AnsiString filename, char *func, int line);
+
+	void __fastcall SetSocketStatus(AnsiString msg);
+
+	void __fastcall Log(AnsiString LogMsg);
+    //로그기록
+	TCriticalSection *LogCS;
+    FILE *LogFP;
+	AnsiString CurrentLogDate;   // 날짜 바뀜 감지용
+
+public:		// User declarations
+	__fastcall TFormServer(TComponent* Owner);
+	__fastcall ~TFormServer();
+};
+//---------------------------------------------------------------------------
+extern PACKAGE TFormServer *FormServer;
+//---------------------------------------------------------------------------
+#endif

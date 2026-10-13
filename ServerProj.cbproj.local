@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2011-05-17 17:18:04.231.cbproj,C:\Users\Administrator\Documents\RAD Studio\Projects\Project1.cbproj=C:\Users\Administrator\Documents\RAD Studio\Projects\ServerProj.cbproj</Transaction>
+    <Transaction>2011-05-17 17:18:23.058.cpp,C:\Users\Administrator\Documents\RAD Studio\Projects\Unit1.cpp=C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.cpp</Transaction>
+    <Transaction>2011-05-17 17:18:23.058.h,C:\Users\Administrator\Documents\RAD Studio\Projects\Unit1.h=C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.h</Transaction>
+    <Transaction>2011-05-17 17:18:23.058.dfm,C:\Users\Administrator\Documents\RAD Studio\Projects\Unit1.dfm=C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.dfm</Transaction>
+    <Transaction>2011-05-17 17:21:39.775.cpp,C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.cpp=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\UnitServer.cpp</Transaction>
+    <Transaction>2011-05-17 17:21:39.775.h,C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.h=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\UnitServer.h</Transaction>
+    <Transaction>2011-05-17 17:21:39.775.dfm,C:\Users\Administrator\Documents\RAD Studio\Projects\UnitServer.dfm=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\UnitServer.dfm</Transaction>
+    <Transaction>2011-05-17 17:21:42.268.cbproj,C:\Users\Administrator\Documents\RAD Studio\Projects\ServerProj.cbproj=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\ServerProj.cbproj</Transaction>
+    <Transaction>2011-05-17 18:59:05.157.cpp,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.cpp=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.cpp</Transaction>
+    <Transaction>2011-05-17 18:59:05.157.h,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.h=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.h</Transaction>
+    <Transaction>2011-05-17 19:03:11.946.cpp,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.cpp=</Transaction>
+    <Transaction>2011-05-17 19:07:45.878.cpp,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.cpp=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.cpp</Transaction>
+    <Transaction>2011-05-17 19:07:45.878.h,C:\project2007\SOCKET_TCP_SAMPLE\SERVER\Unit1.h=C:\project2007\SOCKET_TCP_SAMPLE\SERVER\SecurityThread.h</Transaction>
+  </Transactions>
+</BorlandProject>
